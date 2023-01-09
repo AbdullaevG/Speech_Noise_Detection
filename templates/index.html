@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Laughter detection</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css">
+    <style type="text/css">
+      body {
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="continter">
+      <div class="row">
+        <div class="col">
+          <h1>Load file</h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4">
+          <form>
+            <div class="mb-3">
+              <label for="formFile" class="form-label">Only <b>wav</b> format available</label>
+              <input class="form-control" type="file" id="fileupload" name="fileupload" data-url="/upload">
+              <div id="loading" style="display: none; margin-top: 10px;"><img src="static/Gear-0.4s-200px.gif" height="50px" width="50px" title="Processing..." /><span>Processing...</span></span></div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 30px;">
+        <div class="col-4">
+          <h1>Detection result</h1>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 30px;">
+        <div class="col-6">
+            <div id="waveform" style="border: 1px solid #000;">
+                <!-- Here be waveform -->
+            </div>
+            <div id="wave-timeline">
+                <!-- Here be timeline -->
+            </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 30px;">
+        <div class="col-4">
+          <button class="btn btn-success btn-block" id="playPause" disabled>
+              <span id="play">
+                  <i class="bi bi-play-fill"></i>
+                  Play
+              </span>
+              <span id="pause" style="display: none">
+                  <i class="bi bi-pause-fill"></i>
+                  Pause
+              </span>
+          </button>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 30px;">
+        <div class="col-6">
+          <div class="list-group" id="playlist">
+            <!-- Here be audio links -->
+          </div>
+        </div>
+      </div>
+    </div>
+	  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"> </script>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"> </script>
+    <script src="/static/jquery.ui.widget.js"> </script>
+    <script src="/static/jquery.iframe-transport.js"> </script>
+    <script src="/static/jquery.fileupload.js"> </script>
+    <script src="https://unpkg.com/wavesurfer.js@5.2.0/dist/wavesurfer.js"> </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/5.2.0/plugin/wavesurfer.regions.js"> </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/5.2.0/plugin/wavesurfer.timeline.js"> </script>
+    <script src="static/script.js"> </script>
+    <script type="text/javascript">
+      var wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: '#428bca',
+        progressColor: '#31708f',
+        height: 200,
+        barWidth: 3,
+        plugins: [
+          WaveSurfer.regions.create({
+              regionsMinLength: 2,
+              regions: [],
+          }),
+          WaveSurfer.timeline.create({
+            container: "#wave-timeline",
+            timeInterval: 0.1
+          })
+        ]
+      });
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        let playPause = document.querySelector('#playPause');
+        playPause.addEventListener('click', function() {
+            wavesurfer.playPause();
+        });
+
+        // Toggle play/pause text
+        wavesurfer.on('play', function() {
+            document.querySelector('#play').style.display = 'none';
+            document.querySelector('#pause').style.display = '';
+        });
+        wavesurfer.on('pause', function() {
+            document.querySelector('#play').style.display = '';
+            document.querySelector('#pause').style.display = 'none';
+        });
+
+        let currentTrack = 0;
+        let number_of_tracks = 0;
+        let links = [];
+
+        // Load a track by index and highlight the corresponding link
+        let setCurrentSong = function(index) {
+            links[currentTrack].classList.remove('active');
+            currentTrack = index;
+            links[currentTrack].classList.add('active');
+            wavesurfer.load(links[currentTrack].href);
+            wavesurfer.clearRegions();
+            for (i = 0; i < links[currentTrack].intervals.length; ++i) {
+              let interval = links[currentTrack].intervals[i];
+              let start = interval[0];
+              let end = interval[1];
+              wavesurfer.addRegion({start: start, end: end, color: 'hsla(400, 100%, 30%, 0.5)', drag: false});
+            }
+        };
+
+        let loadTrackOnClick = function(event) {
+            event.preventDefault();
+            setCurrentSong(event.currentTarget.index);
+        }; 
+
+        let updatePlaylist = function(intervals) {
+          // The playlist links
+          links = document.querySelectorAll('#playlist a');
+
+          // Load the track on click
+          Array.prototype.forEach.call(links, function(link, index) {
+              link.index = index;
+              if (!link.hasOwnProperty("intervals")) {
+                link.intervals = intervals;
+              }
+              link.removeEventListener("click", loadTrackOnClick);
+              link.addEventListener("click", loadTrackOnClick);
+          });
+
+          wavesurfer.on('error', function(e) {
+              console.warn(e);
+          });
+
+          // Load the first track
+          setCurrentSong(currentTrack);
+        };
+
+        $('#fileupload').fileupload({
+          acceptFileTypes:  /(\.|\/)(wav)$/i,
+          dataType: "json",
+          send: function(e, data) {
+            $("#loading").show();
+            $("#fileupload").prop("disabled", true);
+          },
+           done: function (e, data) {
+            $("#loading").hide();
+            $("#playPause").prop("disabled", false);
+            $("#fileupload").prop("disabled", false);
+
+            let message = data.result.message;
+            if (message != "ok") {
+              alert(message);
+              return;
+            }
+
+            let intervals = data.result.intervals;
+            let filename = data.result.filename;
+
+            let playlist = $("#playlist");
+            playlist.prepend('<a href="/static/' + filename + '" class="list-group-item"><i class="bi bi-play-fill"></i>' + filename + '</a>');
+            let links = document.querySelectorAll('#playlist a');
+            Array.prototype.forEach.call(links, function(link, index) {
+              links[index].classList.remove('active');
+            });
+            currentTrack = 0;
+            updatePlaylist(intervals);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
