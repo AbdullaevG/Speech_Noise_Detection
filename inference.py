@@ -260,7 +260,7 @@ def inference(file_path,
               min_frames_num = MIN_FRAMES_NUM,
               device = device):
     
-    aud, sr = librosa.load(file_path, sr = None)
+    aud, sr = librosa.load(file_path, sr = 32_000)
     duration = len(aud) // sr
     hop_len = int(0.050 * sr)
     win_len = int(0.2 * sr)
