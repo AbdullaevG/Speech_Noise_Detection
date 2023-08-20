@@ -3,7 +3,11 @@
   1. pip install -r requirements.txt
   2. uvicorn server:app --port PORT
 
-This project was carried out in Huawei Lab under the leadership of Alexander Golubkov and Evgeny Shurovnov. The aim of the project was to create a model that will clean human speech from laughter and can be used on a smart speaker device  Huawei Sound X.
+   Данный проект был выполнен в Huawei Lab. Цель проекты была в создании модели, которая будет детектировать смех человека и может помешаться на устройстве умной колонки  Huawei Sound X. Для этого по памяти модель должна занимать объем не более 25 Мб.
+
+   В папке [resources](./resources) расположены несколько аудиофайлов, которые можно загрузить в форму и посмотреть на результат детекции.  
+
+
 
 
 
